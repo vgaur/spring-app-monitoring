@@ -56,3 +56,5 @@
     restart: unless-stopped
     ports:
       - 8061:8061
+    volumes:
+      - ./data/app:/files

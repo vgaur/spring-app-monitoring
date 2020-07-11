@@ -1,5 +1,7 @@
 package com.vgaur.monitoring.loader;
 
+import com.vgaur.monitoring.exception.DataLoadingError;
+import com.vgaur.monitoring.exception.NoDataFoundException;
 import com.vgaur.monitoring.storage.InMemoryDatabase;
 import com.vgaur.monitoring.util.FileIdentifier;
 import org.slf4j.Logger;
@@ -8,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.ManagedBean;
 import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
@@ -20,22 +22,23 @@ import java.util.*;
 public class CSVFileToDBLoader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CSVFileToDBLoader.class);
+    public static final String FILES = "/files/";
 
-    InMemoryDatabase inMemoryDatabase;
+    InMemoryDatabase inMemoryDatabase =
+        InMemoryDatabase.INSTANCE.SINGLE_INSTANCE.getInMemoryDatabase();
 
     /**
      * Accepts the file
+     *
      * @param fileIdentifier
      */
-    public void load(String fileIdentifier) {
-
-        inMemoryDatabase = InMemoryDatabase.INSTANCE.SINGLE_INSTANCE.getInMemoryDatabase();
+    public void load(String fileIdentifier) throws DataLoadingError {
 
         List<Map<String, String>> rows = new ArrayList<>();
         try {
             String fileLocation = FileIdentifier.lookUp(fileIdentifier);
-            LOGGER.error("loaded file - {}", fileLocation);
-            InputStream is = getClass().getResourceAsStream("/files/"+fileLocation);
+            LOGGER.info("File getting loaded in database - {}", fileLocation);
+            InputStream is = new FileInputStream(FILES + fileLocation);
 
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
 
@@ -61,15 +64,22 @@ public class CSVFileToDBLoader {
             }
 
         } catch (Exception ex) {
-            ex.printStackTrace();
+            throw new DataLoadingError("Error while loading file with identifier " + fileIdentifier,
+                ex);
         }
 
         inMemoryDatabase.load(rows);
     }
 
 
-    public String findValue(String key, String value) {
-        return inMemoryDatabase.find(key, value);
+    public String findValue(String key, String value) throws NoDataFoundException {
+        String data = inMemoryDatabase.find(key, value);
+        if (data == null) {
+            LOGGER
+                .debug("Unable to find any data corresponding to key {} and value {}", key, value);
+            throw new NoDataFoundException(String.format("No Data Found for Key %s", key), null);
+        }
+        return data;
     }
 
 }
