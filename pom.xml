@@ -22,7 +22,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
-		<camel.version>3.4.0</camel.version>
+		<camel.version>3.21.4</camel.version>
 		<nitrite.version>1.0</nitrite.version>
 	</properties>
 
